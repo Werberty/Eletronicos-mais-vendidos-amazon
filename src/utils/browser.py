@@ -1,4 +1,3 @@
-from math import prod
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -31,20 +30,32 @@ class BrowserChrome:
         )
 
     def raspa_dados_dos_produtos(self):
+        lista_dados_produtos = {}
         try:
-            self.rolar_pagina()
-            html_soup = BeautifulSoup(self.browser.page_source, 'html.parser')
-            # lista_produtos = html_soup.select("div[id='gridItemRoot']")
-            lista_produtos = html_soup.select('#gridItemRoot > div')
-            print(f'N° produtos: {len(lista_produtos)}')
-            for produto in lista_produtos:
+            lista_produtos = self.obter_lista_produtos()
+            for n, produto in enumerate(lista_produtos):
                 titulo = produto.select(
                     '#gridItemRoot > div > div.zg-grid-general-faceout > div > a:nth-child(2) > span > div')[0]
                 titulo = titulo.get_text()
+
+                preco = produto.select(
+                    '#gridItemRoot > div > div.zg-grid-general-faceout > div > div:nth-child(4) > a > span > span'
+                )[0].get_text()
+
+                link = ...
+
+                lista_dados_produtos[f'#{n+1}'] = {'Titulo': titulo, 'Preco': preco}
                 # titulo = self.limpar_titulo(titulo)
-                print(titulo)
         except Exception as e:
             print('ERRO:', e)
+
+        print(lista_dados_produtos)
+    
+    def obter_lista_produtos(self):
+        self.rolar_pagina()
+        html_soup = BeautifulSoup(self.browser.page_source, 'html.parser')
+        lista_produtos = html_soup.select('#gridItemRoot > div')
+        return lista_produtos
     
     def limpar_titulo(self, titulo):
         if ':' in titulo:
