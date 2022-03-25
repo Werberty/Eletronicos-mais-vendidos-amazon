@@ -4,6 +4,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
+import pandas as pd
+from openpyxl.workbook import Workbook
 from time import sleep
 
 # Caminho para a raiz do projeto
@@ -12,7 +14,7 @@ ROOT_FOLDER = Path(__file__).parent.parent.parent
 CHROME_DRIVER_PATH = ROOT_FOLDER / 'bin' / 'chromedriver'
 
 
-class BrowserChrome:
+class BrowserAuto:
     def __init__(self, *options) -> None:
         self.chrome_options = webdriver.ChromeOptions()
 
@@ -33,7 +35,7 @@ class BrowserChrome:
         lista_dados_produtos = {}
         try:
             lista_produtos = self.obter_lista_produtos()
-            for n, produto in enumerate(lista_produtos):
+            for n, produto in enumerate(lista_produtos, 1):
                 titulo = produto.select(
                     '#gridItemRoot > div > div.zg-grid-general-faceout > div > a:nth-child(2) > span > div'
                 )[0].get_text()
@@ -45,21 +47,28 @@ class BrowserChrome:
                 link = 'https://www.amazon.com.br' + produto.select_one(
                     '#gridItemRoot > div > div.zg-grid-general-faceout > div > a:nth-child(2)'
                 ).get('href')
-                print(link, '\n')
 
-                lista_dados_produtos[f'#{n+1}'] = {'Titulo': titulo, 'Preco': preco}
+                lista_dados_produtos[f'#{n}'] = [titulo, preco, link]
                 # titulo = self.limpar_titulo(titulo)
         except Exception as e:
             print('ERRO:', e)
 
-        # print(lista_dados_produtos)
+        return lista_dados_produtos
     
+    def dataframe_para_exel(self, dataframe):
+        dataframe.to_excel('Produtos.xlsx')
+
+    def gerar_data_frame(self, dados):
+        data_frame = pd.DataFrame.from_dict(dados, orient='index').rename(
+            columns={0: 'Título', 1: 'Preço', 2: 'Link'})
+        return data_frame
+
     def obter_lista_produtos(self):
         self.rolar_pagina()
         html_soup = BeautifulSoup(self.browser.page_source, 'html.parser')
         lista_produtos = html_soup.select('#gridItemRoot > div')
         return lista_produtos
-    
+
     def limpar_titulo(self, titulo):
         if ':' in titulo:
             titulo = titulo.split(':')[0]
@@ -71,7 +80,7 @@ class BrowserChrome:
             titulo = titulo.split('–')[0]
 
         return titulo
-        
+
     def rolar_pagina(self):
         page = self.browser.find_element(By.TAG_NAME, 'html')
         page.send_keys(Keys.END)
@@ -85,8 +94,9 @@ class BrowserChrome:
 
 
 if __name__ == '__main__':
-    drive = BrowserChrome('--disable-gpu', '--no-sandbox')
+    drive = BrowserAuto('--disable-gpu', '--no-sandbox')
     drive.acessa('https://www.amazon.com.br/gp/bestsellers/electronics')
-    drive.raspa_dados_dos_produtos()
+    produtos = drive.raspa_dados_dos_produtos()
+    drive.dataframe_para_exel(drive.gerar_data_frame(produtos))
     sleep(4)
     drive.sair()
