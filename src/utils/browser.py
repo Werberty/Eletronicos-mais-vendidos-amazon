@@ -51,7 +51,7 @@ class BrowserAuto:
                     )[0].get_text()
                 except:
                     preco = 'R$ --------'
-                
+
                 link = 'https://www.amazon.com.br' + produto.select_one(
                     '#gridItemRoot > div > div.zg-grid-general-faceout > div > a:nth-child(2)'
                 ).get('href')
@@ -84,7 +84,7 @@ class BrowserAuto:
             html_soup = BeautifulSoup(self.browser.page_source, 'html.parser')
             lista_produtos.extend(html_soup.select('#gridItemRoot > div'))
             self.proxima_pagina()
-        
+
         return lista_produtos
 
     def limpar_titulo(self, titulo):
